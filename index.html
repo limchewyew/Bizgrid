@@ -139,7 +139,33 @@
       font-size: 0.72rem;
       letter-spacing: 0.5px;
       white-space: nowrap;
-      text-align: center; /* Centralized headers */
+      text-align: center;
+      user-select: none;
+    }
+
+    /* Sortable Header Styling */
+    th.sortable {
+      cursor: pointer;
+      transition: color 0.15s, background-color 0.15s;
+    }
+
+    th.sortable:hover {
+      background-color: #232733;
+      color: var(--accent);
+    }
+
+    th.sort-active {
+      color: var(--accent);
+    }
+
+    .sort-icon {
+      margin-left: 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    th.sort-active .sort-icon {
+      color: var(--accent);
     }
 
     td {
@@ -147,7 +173,7 @@
       border-bottom: 1px solid #1f2330;
       color: #e5e7eb;
       vertical-align: middle;
-      text-align: center; /* Centralized columns */
+      text-align: center;
     }
 
     tbody tr:hover {
@@ -173,10 +199,11 @@
       white-space: nowrap;
     }
 
-    /* Description kept left-aligned with natural wrapping */
+    /* Description centered header, left-aligned body text */
     th.col-desc {
       text-align: center;
     }
+
     td.col-desc {
       text-align: left;
     }
@@ -190,27 +217,27 @@
       word-break: break-word;
     }
 
-    /* Extra space and centering for Website column */
+    /* Centered website icon with separation */
     .col-web {
       width: 80px;
       min-width: 80px;
-      padding-right: 1.5rem; /* Gap between website and employees */
+      padding-right: 1.5rem;
       white-space: nowrap;
     }
 
     .col-emp {
-      width: 110px;
+      width: 120px;
       white-space: nowrap;
       padding-left: 0.75rem;
     }
 
     .col-year {
-      width: 80px;
+      width: 90px;
       white-space: nowrap;
     }
 
     .col-rev {
-      width: 110px;
+      width: 130px;
       white-space: nowrap;
     }
 
@@ -342,9 +369,15 @@
             <th class="col-country">Country</th>
             <th class="col-desc">Description</th>
             <th class="col-web">Website</th>
-            <th class="col-emp">Employees</th>
-            <th class="col-year">Founded</th>
-            <th class="col-rev">Revenue</th>
+            <th class="col-emp sortable" onclick="toggleSort('Number of employees')">
+              Employees <span class="sort-icon" id="sort-emp">↕</span>
+            </th>
+            <th class="col-year sortable" onclick="toggleSort('Founded year')">
+              Founded <span class="sort-icon" id="sort-year">↕</span>
+            </th>
+            <th class="col-rev sortable" onclick="toggleSort('Revenue range')">
+              Revenue <span class="sort-icon" id="sort-rev">↕</span>
+            </th>
             <th class="col-misc">Activity</th>
             <th class="col-misc">Sub-industry</th>
             <th class="col-misc">Industry</th>
@@ -369,9 +402,36 @@
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1R8aekz9Tx803PiGKX9AjB_z8qUD19_JU/gviz/tq?tqx=out:json&sheet=Dataset&gid=1224566365';
     const ROWS_PER_PAGE = 100;
 
+    // Custom Rank Mappings
+    const EMPLOYEE_RANKS = {
+      '1-10': 1,
+      '11-50': 2,
+      '51-100': 3,
+      '101-250': 4,
+      '251-500': 5,
+      '501-1000': 6,
+      '1001-5000': 7,
+      '5001-10000': 8,
+      '10001+': 9
+    };
+
+    const REVENUE_RANKS = {
+      'less than $1m': 1,
+      '$1m to $10m': 2,
+      '$10m to $50m': 3,
+      '$50m to $100m': 4,
+      '$100m to $500m': 5,
+      '$500m to $1b': 6,
+      '$1b to $10b': 7,
+      '$10b to $50b': 8,
+      '$50b+': 9
+    };
+
     let allCompanies = [];
     let filteredCompanies = [];
     let currentPage = 1;
+    let currentSortColumn = null;
+    let currentSortOrder = 'none'; // 'asc', 'desc', or 'none'
 
     async function fetchDataset() {
       try {
@@ -397,6 +457,113 @@
         console.error('Failed to load Google Sheet data:', err);
         return [];
       }
+    }
+
+    function getRank(column, value) {
+      if (!value) return -1;
+      const cleanVal = value.toString().trim().toLowerCase();
+
+      if (column === 'Number of employees') {
+        return EMPLOYEE_RANKS[cleanVal] || 0;
+      }
+
+      if (column === 'Revenue range') {
+        return REVENUE_RANKS[cleanVal] || 0;
+      }
+
+      if (column === 'Founded year') {
+        const yr = parseInt(cleanVal, 10);
+        return isNaN(yr) ? 0 : yr;
+      }
+
+      return cleanVal;
+    }
+
+    function toggleSort(column) {
+      if (currentSortColumn === column) {
+        if (currentSortOrder === 'asc') currentSortOrder = 'desc';
+        else if (currentSortOrder === 'desc') {
+          currentSortOrder = 'none';
+          currentSortColumn = null;
+        }
+      } else {
+        currentSortColumn = column;
+        currentSortOrder = 'asc';
+      }
+
+      updateSortHeaders();
+      applyFiltersAndSort();
+    }
+
+    function updateSortHeaders() {
+      const empIcon = document.getElementById('sort-emp');
+      const yearIcon = document.getElementById('sort-year');
+      const revIcon = document.getElementById('sort-rev');
+
+      empIcon.textContent = '↕';
+      yearIcon.textContent = '↕';
+      revIcon.textContent = '↕';
+
+      empIcon.parentElement.classList.remove('sort-active');
+      yearIcon.parentElement.classList.remove('sort-active');
+      revIcon.parentElement.classList.remove('sort-active');
+
+      if (currentSortOrder === 'none' || !currentSortColumn) return;
+
+      const symbol = currentSortOrder === 'asc' ? '▲' : '▼';
+
+      if (currentSortColumn === 'Number of employees') {
+        empIcon.textContent = symbol;
+        empIcon.parentElement.classList.add('sort-active');
+      } else if (currentSortColumn === 'Founded year') {
+        yearIcon.textContent = symbol;
+        yearIcon.parentElement.classList.add('sort-active');
+      } else if (currentSortColumn === 'Revenue range') {
+        revIcon.textContent = symbol;
+        revIcon.parentElement.classList.add('sort-active');
+      }
+    }
+
+    function applyFiltersAndSort() {
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      currentPage = 1;
+
+      // 1. Search Filter
+      let results = !query
+        ? [...allCompanies]
+        : allCompanies.filter(item => {
+            return (
+              (item['Company Name'] || '').toString().toLowerCase().includes(query) ||
+              (item['Country'] || '').toString().toLowerCase().includes(query) ||
+              (item['Description'] || '').toString().toLowerCase().includes(query) ||
+              (item['Industry'] || '').toString().toLowerCase().includes(query) ||
+              (item['Sector'] || '').toString().toLowerCase().includes(query) ||
+              (item['Sub-industry'] || '').toString().toLowerCase().includes(query) ||
+              (item['Activity'] || '').toString().toLowerCase().includes(query) ||
+              (item['Region'] || '').toString().toLowerCase().includes(query)
+            );
+          });
+
+      // 2. Custom Sort
+      if (currentSortColumn && currentSortOrder !== 'none') {
+        results.sort((a, b) => {
+          const rankA = getRank(currentSortColumn, a[currentSortColumn]);
+          const rankB = getRank(currentSortColumn, b[currentSortColumn]);
+
+          if (rankA === rankB) return 0;
+          if (rankA === -1 || rankA === 0) return 1;
+          if (rankB === -1 || rankB === 0) return -1;
+
+          if (currentSortOrder === 'asc') {
+            return rankA > rankB ? 1 : -1;
+          } else {
+            return rankA < rankB ? 1 : -1;
+          }
+        });
+      }
+
+      filteredCompanies = results;
+      renderCurrentPage();
     }
 
     function renderCurrentPage() {
@@ -492,32 +659,8 @@
       renderCurrentPage();
     }
 
-    function applySearch() {
-      const query = document.getElementById('search-input').value.toLowerCase().trim();
-      currentPage = 1;
-
-      if (!query) {
-        filteredCompanies = allCompanies;
-      } else {
-        filteredCompanies = allCompanies.filter(item => {
-          return (
-            (item['Company Name'] || '').toString().toLowerCase().includes(query) ||
-            (item['Country'] || '').toString().toLowerCase().includes(query) ||
-            (item['Description'] || '').toString().toLowerCase().includes(query) ||
-            (item['Industry'] || '').toString().toLowerCase().includes(query) ||
-            (item['Sector'] || '').toString().toLowerCase().includes(query) ||
-            (item['Sub-industry'] || '').toString().toLowerCase().includes(query) ||
-            (item['Activity'] || '').toString().toLowerCase().includes(query) ||
-            (item['Region'] || '').toString().toLowerCase().includes(query)
-          );
-        });
-      }
-
-      renderCurrentPage();
-    }
-
     document.addEventListener('DOMContentLoaded', async () => {
-      document.getElementById('search-input').addEventListener('input', applySearch);
+      document.getElementById('search-input').addEventListener('input', applyFiltersAndSort);
 
       allCompanies = await fetchDataset();
       filteredCompanies = allCompanies;
