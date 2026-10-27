@@ -1,22 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bizgrid</title>
-  
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bizgrid Directory</title>
 
   <style>
     :root {
       --bg: #0f1117;
-      --card-bg: #1a1d26;
-      --card-border: #2a2e3d;
+      --surface: #1a1d26;
+      --border: #2a2e3d;
       --text: #f3f4f6;
       --text-muted: #9ca3af;
       --accent: #3b82f6;
-      --accent-hover: #2563eb;
+      --row-hover: #222634;
     }
 
     * {
@@ -31,47 +28,46 @@
       color: var(--text);
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
     }
 
     header {
-      padding: 1.25rem 2rem;
-      border-bottom: 1px solid var(--card-border);
+      padding: 0.85rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 17, 23, 0.95);
       display: flex;
-      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
       gap: 1rem;
-      background: rgba(15, 17, 23, 0.8);
-      backdrop-filter: blur(10px);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
+      flex-shrink: 0;
     }
 
     .brand {
-      font-size: 1.4rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      letter-spacing: -0.5px;
       color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .controls {
       display: flex;
-      gap: 0.75rem;
+      gap: 1rem;
       align-items: center;
-      flex-grow: 1;
-      max-width: 600px;
+      flex: 1;
+      max-width: 500px;
     }
 
     .search-bar {
       flex: 1;
-      padding: 0.6rem 1rem;
+      padding: 0.55rem 0.9rem;
       background: #232733;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
       color: #fff;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       outline: none;
       transition: border-color 0.2s;
     }
@@ -80,33 +76,17 @@
       border-color: var(--accent);
     }
 
-    .view-toggle {
-      background: #232733;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 0.3rem;
-      display: flex;
-      gap: 0.25rem;
-    }
-
-    .toggle-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      padding: 0.35rem 0.75rem;
-      border-radius: 6px;
-      cursor: pointer;
+    .record-count {
       font-size: 0.85rem;
-      font-weight: 500;
-    }
-
-    .toggle-btn.active {
-      background: var(--accent);
-      color: #fff;
+      color: var(--text-muted);
+      white-space: nowrap;
     }
 
     main {
       flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
       position: relative;
     }
 
@@ -115,134 +95,126 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 5rem 1rem;
+      height: 100%;
       color: var(--text-muted);
     }
 
     .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid var(--card-border);
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
     }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
 
-    #grid-view {
-      padding: 1.5rem 2rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.25rem;
+    .table-container {
+      flex: 1;
+      overflow: auto;
+      display: none;
     }
 
-    .card {
-      background-color: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      border-color: #3b4254;
-    }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .logo-img {
-      width: 42px;
-      height: 42px;
-      border-radius: 8px;
-      object-fit: contain;
-      background: #fff;
-      padding: 3px;
-    }
-
-    .logo-placeholder {
-      width: 42px;
-      height: 42px;
-      border-radius: 8px;
-      background: #2a2e3d;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      color: var(--text-muted);
-    }
-
-    .company-name {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: #fff;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.82rem;
       white-space: nowrap;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: #161922;
+      z-index: 10;
+      box-shadow: 0 1px 0 var(--border);
+    }
+
+    th {
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: #d1d5db;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid #1f2330;
+      color: #e5e7eb;
+      max-width: 320px;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .company-desc {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      margin-bottom: 1rem;
+    tbody tr:hover {
+      background-color: var(--row-hover);
     }
 
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-bottom: 1rem;
+    .logo-cell {
+      width: 44px;
+      text-align: center;
+      padding: 0.4rem 0.5rem;
     }
 
-    .tag {
-      background: #262a36;
-      border: 1px solid #323746;
-      font-size: 0.75rem;
-      padding: 0.2rem 0.5rem;
+    .table-logo {
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+      background: #fff;
       border-radius: 4px;
-      color: #cbd5e1;
+      padding: 2px;
+      display: inline-block;
+      vertical-align: middle;
     }
 
-    .card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--card-border);
-      font-size: 0.8rem;
+    .logo-fallback {
+      width: 26px;
+      height: 26px;
+      line-height: 26px;
+      text-align: center;
+      background: #2a2e3d;
+      border-radius: 4px;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      display: inline-block;
+      vertical-align: middle;
     }
 
-    .website-link {
+    .desc-cell {
+      max-width: 280px;
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-height: 1.35;
+      color: var(--text-muted);
+    }
+
+    a.cell-link {
       color: var(--accent);
       text-decoration: none;
-      font-weight: 500;
     }
 
-    .website-link:hover {
+    a.cell-link:hover {
       text-decoration: underline;
     }
 
-    #map-view {
-      display: none;
-      width: 100%;
-      height: calc(100vh - 75px);
+    .pill {
+      display: inline-block;
+      background: #232733;
+      border: 1px solid #333849;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
     }
   </style>
 </head>
@@ -251,216 +223,173 @@
   <header>
     <div class="brand">Bizgrid</div>
     <div class="controls">
-      <input type="text" id="search-input" class="search-bar" placeholder="Search companies, countries, industries..." />
-      <div class="view-toggle">
-        <button id="grid-toggle-btn" class="toggle-btn active" onclick="switchView('grid')">Grid</button>
-        <button id="map-toggle-btn" class="toggle-btn" onclick="switchView('map')">Map</button>
-      </div>
+      <input type="text" id="search-input" class="search-bar" placeholder="Filter by company, industry, country, or sector..." />
+      <span class="record-count" id="record-count">0 records</span>
     </div>
   </header>
 
   <main>
     <div id="loading-state">
       <div class="spinner"></div>
-      <p>Loading records from Google Sheets...</p>
+      <p>Loading records from Dataset...</p>
     </div>
 
-    <div id="grid-view"></div>
-    <div id="map-view"></div>
+    <div class="table-container" id="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Logo</th>
+            <th>Company Name</th>
+            <th>Country</th>
+            <th>Description</th>
+            <th>Website</th>
+            <th>Employees</th>
+            <th>Founded</th>
+            <th>Revenue</th>
+            <th>Coordinates</th>
+            <th>Activity</th>
+            <th>Sub-industry</th>
+            <th>Industry</th>
+            <th>Sector</th>
+            <th>Region</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
   </main>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <script>
-    // Live Google Sheet URL (GID: 1224566365)
-    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1R8aekz9Tx803PiGKX9AjB_z8qUD19_JU/gviz/tq?tqx=out:json&gid=1224566365';
+    // Explicitly targeting the "Dataset" sheet tab via GID and sheet name
+    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1R8aekz9Tx803PiGKX9AjB_z8qUD19_JU/gviz/tq?tqx=out:json&sheet=Dataset&gid=1224566365';
 
     let allCompanies = [];
-    let mapInstance = null;
-    let markersLayer = null;
 
-    async function fetchSheetData() {
+    async function fetchDataset() {
       try {
         const response = await fetch(SHEET_URL);
         const text = await response.text();
 
-        // Extract JSON from Google's callback wrapper
+        // Extract JSON string from the Google Visualization response wrapper
         const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-        const data = JSON.parse(jsonString);
+        const json = JSON.parse(jsonString);
 
-        // Map column headers
-        const headers = data.table.cols.map(c => (c.label ? c.label.trim() : ''));
+        // Normalize header names to match the first row
+        const headers = json.table.cols.map(c => (c.label ? c.label.trim() : ''));
 
-        // Parse rows
-        const records = data.table.rows.map(row => {
-          const item = {};
+        return json.table.rows.map(row => {
+          const entry = {};
           row.c.forEach((cell, idx) => {
-            const header = headers[idx];
-            if (header) {
-              item[header] = cell ? cell.v : '';
+            const key = headers[idx];
+            if (key) {
+              entry[key] = (cell && cell.v !== null && cell.v !== undefined) ? cell.v : '';
             }
           });
-
-          // Parse coordinates string ("lat, lng") if available
-          if (item['Coordinates'] && typeof item['Coordinates'] === 'string') {
-            const coords = item['Coordinates'].split(',').map(s => parseFloat(s.trim()));
-            if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-              item.lat = coords[0];
-              item.lng = coords[1];
-            }
-          }
-
-          return item;
+          return entry;
         });
-
-        return records;
       } catch (err) {
-        console.error('Error loading Google Sheet data:', err);
+        console.error('Failed to load Google Sheet data:', err);
         return [];
       }
     }
 
-    function renderGrid(companies) {
-      const container = document.getElementById('grid-view');
-      container.innerHTML = '';
+    function renderTable(data) {
+      const tbody = document.getElementById('table-body');
+      const countLabel = document.getElementById('record-count');
+      tbody.innerHTML = '';
+      countLabel.textContent = `${data.length.toLocaleString()} records`;
 
-      if (!companies.length) {
-        container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 4rem 0;">No matching records found.</div>`;
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 3rem; color: var(--text-muted);">No matching records found.</td></tr>`;
         return;
       }
 
       const fragment = document.createDocumentFragment();
 
-      companies.forEach(company => {
-        const card = document.createElement('div');
-        card.className = 'card';
+      data.forEach(item => {
+        const tr = document.createElement('tr');
 
-        const name = company['Company Name'] || 'Unnamed';
-        const logo = company['Logo'];
-        const desc = company['Description'] || 'No description available.';
-        const website = company['Website'] || '';
-        const country = company['Country'] || '';
-        const sector = company['Sector'] || company['Industry'] || '';
+        const logo = item['Logo'] || '';
+        const name = item['Company Name'] || '-';
+        const country = item['Country'] || '-';
+        const desc = item['Description'] || '-';
+        const website = item['Website'] || '';
+        const employees = item['Number of employees'] || '-';
+        const founded = item['Founded year'] || '-';
+        const revenue = item['Revenue range'] || '-';
+        const coords = item['Coordinates'] || '-';
+        const activity = item['Activity'] || '-';
+        const subIndustry = item['Sub-industry'] || '-';
+        const industry = item['Industry'] || '-';
+        const sector = item['Sector'] || '-';
+        const region = item['Region'] || '-';
 
+        // Logo cell renderer
         const logoHtml = logo
-          ? `<img src="${logo}" class="logo-img" alt="${name}" onerror="this.onerror=null; this.outerHTML='<div class=\\'logo-placeholder\\'>${name[0] || 'C'}</div>'"/>`
-          : `<div class="logo-placeholder">${name[0] || 'C'}</div>`;
+          ? `<img src="${logo}" class="table-logo" alt="${name}" onerror="this.onerror=null; this.outerHTML='<span class=\\'logo-fallback\\'>${name[0] || 'C'}</span>'" />`
+          : `<span class="logo-fallback">${name[0] || 'C'}</span>`;
 
-        card.innerHTML = `
-          <div>
-            <div class="card-header">
-              ${logoHtml}
-              <div class="company-name" title="${name}">${name}</div>
-            </div>
-            <div class="tags">
-              ${country ? `<span class="tag">${country}</span>` : ''}
-              ${sector ? `<span class="tag">${sector}</span>` : ''}
-            </div>
-            <p class="company-desc">${desc}</p>
-          </div>
-          <div class="card-footer">
-            <span style="color: var(--text-muted);">${company['Founded year'] ? 'Est. ' + company['Founded year'] : ''}</span>
-            ${website ? `<a href="${website.startsWith('http') ? website : 'https://' + website}" target="_blank" rel="noopener noreferrer" class="website-link">Visit →</a>` : ''}
-          </div>
+        // Website link renderer
+        const websiteHtml = website
+          ? `<a href="${website.startsWith('http') ? website : 'https://' + website}" target="_blank" rel="noopener noreferrer" class="cell-link">${website}</a>`
+          : '-';
+
+        tr.innerHTML = `
+          <td class="logo-cell">${logoHtml}</td>
+          <td><strong>${name}</strong></td>
+          <td>${country !== '-' ? `<span class="pill">${country}</span>` : '-'}</td>
+          <td><div class="desc-cell" title="${desc}">${desc}</div></td>
+          <td>${websiteHtml}</td>
+          <td>${employees}</td>
+          <td>${founded}</td>
+          <td>${revenue}</td>
+          <td style="color: var(--text-muted);">${coords}</td>
+          <td>${activity}</td>
+          <td>${subIndustry}</td>
+          <td>${industry}</td>
+          <td>${sector}</td>
+          <td>${region}</td>
         `;
 
-        fragment.appendChild(card);
+        fragment.appendChild(tr);
       });
 
-      container.appendChild(fragment);
+      tbody.appendChild(fragment);
     }
 
-    function updateMapMarkers(companies) {
-      if (!mapInstance) return;
-
-      markersLayer.clearLayers();
-
-      companies.forEach(company => {
-        if (company.lat && company.lng) {
-          const marker = L.circleMarker([company.lat, company.lng], {
-            radius: 6,
-            fillColor: '#3b82f6',
-            color: '#ffffff',
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 0.8
-          });
-
-          marker.bindPopup(`
-            <div style="font-family: sans-serif; font-size: 13px;">
-              <strong>${company['Company Name'] || 'Company'}</strong><br/>
-              <span style="color: #666;">${company['Country'] || ''}</span><br/>
-              <p style="margin: 4px 0;">${(company['Description'] || '').substring(0, 90)}...</p>
-              ${company['Website'] ? `<a href="${company['Website'].startsWith('http') ? company['Website'] : 'https://' + company['Website']}" target="_blank">Website</a>` : ''}
-            </div>
-          `);
-
-          markersLayer.addLayer(marker);
-        }
-      });
-    }
-
-    function switchView(viewType) {
-      const gridView = document.getElementById('grid-view');
-      const mapView = document.getElementById('map-view');
-      const gridBtn = document.getElementById('grid-toggle-btn');
-      const mapBtn = document.getElementById('map-toggle-btn');
-
-      if (viewType === 'grid') {
-        gridView.style.display = 'grid';
-        mapView.style.display = 'none';
-        gridBtn.classList.add('active');
-        mapBtn.classList.remove('active');
-      } else {
-        gridView.style.display = 'none';
-        mapView.style.display = 'block';
-        gridBtn.classList.remove('active');
-        mapBtn.classList.add('active');
-
-        if (!mapInstance) {
-          mapInstance = L.map('map-view').setView([20, 0], 2);
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap & CartoDB',
-            maxZoom: 19
-          }).addTo(mapInstance);
-
-          markersLayer = L.layerGroup().addTo(mapInstance);
-        }
-
-        setTimeout(() => {
-          mapInstance.invalidateSize();
-          filterAndRender();
-        }, 100);
-      }
-    }
-
-    function filterAndRender() {
+    function applySearch() {
       const query = document.getElementById('search-input').value.toLowerCase().trim();
 
-      const filtered = allCompanies.filter(c => {
-        if (!query) return true;
-        const name = (c['Company Name'] || '').toLowerCase();
-        const country = (c['Country'] || '').toLowerCase();
-        const desc = (c['Description'] || '').toLowerCase();
-        const ind = (c['Industry'] || '').toLowerCase();
-        const sec = (c['Sector'] || '').toLowerCase();
+      if (!query) {
+        renderTable(allCompanies);
+        return;
+      }
 
-        return name.includes(query) || country.includes(query) || desc.includes(query) || ind.includes(query) || sec.includes(query);
+      const filtered = allCompanies.filter(item => {
+        return (
+          (item['Company Name'] || '').toString().toLowerCase().includes(query) ||
+          (item['Country'] || '').toString().toLowerCase().includes(query) ||
+          (item['Description'] || '').toString().toLowerCase().includes(query) ||
+          (item['Industry'] || '').toString().toLowerCase().includes(query) ||
+          (item['Sector'] || '').toString().toLowerCase().includes(query) ||
+          (item['Sub-industry'] || '').toString().toLowerCase().includes(query) ||
+          (item['Activity'] || '').toString().toLowerCase().includes(query) ||
+          (item['Region'] || '').toString().toLowerCase().includes(query)
+        );
       });
 
-      renderGrid(filtered);
-      updateMapMarkers(filtered);
+      renderTable(filtered);
     }
 
-    // Initialize application
     document.addEventListener('DOMContentLoaded', async () => {
-      document.getElementById('search-input').addEventListener('input', filterAndRender);
+      document.getElementById('search-input').addEventListener('input', applySearch);
 
-      allCompanies = await fetchSheetData();
+      allCompanies = await fetchDataset();
 
       document.getElementById('loading-state').style.display = 'none';
-      filterAndRender();
+      document.getElementById('table-container').style.display = 'block';
+
+      renderTable(allCompanies);
     });
   </script>
 </body>
