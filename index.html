@@ -1,298 +1,306 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bizgrid</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <style>
     :root {
-      --bg: #09090b;
-      --surface: #121215;
-      --surface-hover: #18181d;
-      --border: rgba(255, 255, 255, 0.08);
-      --border-subtle: rgba(255, 255, 255, 0.04);
-      --text-main: #f5f5f7;
-      --text-muted: #86868b;
-      --accent: #2997ff;
-      --badge-bg: rgba(255, 255, 255, 0.05);
+      --bg: #0f1117;
+      --card-bg: #1a1d26;
+      --card-border: #2a2e3d;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
     body {
       background-color: var(--bg);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      overflow: hidden;
-      height: 100vh;
+      color: var(--text);
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
     }
 
-    /* Top Bar */
     header {
-      flex-shrink: 0;
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--card-border);
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      padding: 14px 24px;
-      background: rgba(9, 9, 11, 0.8);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .brand-section {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-    }
-
-    .brand-title {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      color: var(--text-main);
-    }
-
-    .count-indicator {
-      font-size: 12px;
-      color: var(--text-muted);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .search-box {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-main);
-      padding: 6px 12px;
-      font-size: 13px;
-      width: 260px;
-      outline: none;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-
-    .search-box:focus {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(41, 151, 255, 0.5);
-      box-shadow: 0 0 0 3px rgba(41, 151, 255, 0.15);
-    }
-
-    /* Data Grid Layout */
-    .grid-container {
-      flex: 1;
-      overflow: auto;
-      background: var(--bg);
-    }
-
-    table {
-      border-collapse: separate;
-      border-spacing: 0;
-      width: 100%;
-      min-width: 1800px;
-      font-size: 13px;
-    }
-
-    thead th {
+      gap: 1rem;
+      background: rgba(15, 17, 23, 0.8);
+      backdrop-filter: blur(10px);
       position: sticky;
       top: 0;
-      z-index: 10;
-      background: #111115;
+      z-index: 1000;
+    }
+
+    .brand {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-grow: 1;
+      max-width: 600px;
+    }
+
+    .search-bar {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      background: #232733;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-bar:focus {
+      border-color: var(--accent);
+    }
+
+    .view-toggle {
+      background: #232733;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.3rem;
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .toggle-btn {
+      background: transparent;
+      border: none;
       color: var(--text-muted);
-      font-weight: 500;
-      font-size: 11px;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      text-align: left;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
-      border-right: 1px solid var(--border-subtle);
-      white-space: nowrap;
-      user-select: none;
-    }
-
-    tbody tr {
-      transition: background-color 0.12s ease;
-    }
-
-    tbody tr:hover {
-      background-color: var(--surface-hover);
-    }
-
-    tbody td {
-      padding: 8px 14px;
-      border-bottom: 1px solid var(--border-subtle);
-      border-right: 1px solid var(--border-subtle);
-      color: #cfcfd4;
-      white-space: nowrap;
-      vertical-align: middle;
-      font-weight: 400;
-    }
-
-    /* Cell Renderers */
-    .col-center {
-      text-align: center;
-    }
-
-    .logo-container {
-      width: 26px;
-      height: 26px;
+      padding: 0.35rem 0.75rem;
       border-radius: 6px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border-subtle);
-      display: inline-flex;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .toggle-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    main {
+      flex: 1;
+      position: relative;
+    }
+
+    #loading-state {
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      padding: 5rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--card-border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #grid-view {
+      padding: 1.5rem 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #3b4254;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
     }
 
     .logo-img {
-      width: 100%;
-      height: 100%;
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
       object-fit: contain;
+      background: #fff;
+      padding: 3px;
     }
 
-    .company-cell {
-      font-weight: 500;
-      color: var(--text-main);
-    }
-
-    .desc-cell {
-      max-width: 280px;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .logo-placeholder {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: #2a2e3d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
       color: var(--text-muted);
     }
 
-    .mono-cell {
-      font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
-      font-size: 12px;
-      font-variant-numeric: tabular-nums;
+    .company-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .badge {
-      display: inline-block;
-      padding: 2px 7px;
+    .company-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .tag {
+      background: #262a36;
+      border: 1px solid #323746;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
       border-radius: 4px;
-      background: var(--badge-bg);
-      font-size: 11px;
-      color: #a1a1a6;
-      border: 1px solid var(--border-subtle);
+      color: #cbd5e1;
     }
 
-    a.cell-url {
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--card-border);
+      font-size: 0.8rem;
+    }
+
+    .website-link {
       color: var(--accent);
       text-decoration: none;
+      font-weight: 500;
     }
 
-    a.cell-url:hover {
+    .website-link:hover {
       text-decoration: underline;
+    }
+
+    #map-view {
+      display: none;
+      width: 100%;
+      height: calc(100vh - 75px);
     }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="brand-section">
-      <h1 class="brand-title">Bizgrid</h1>
-      <span class="count-indicator" id="record-count">Loading...</span>
+    <div class="brand">Bizgrid</div>
+    <div class="controls">
+      <input type="text" id="search-input" class="search-bar" placeholder="Search companies, countries, industries..." />
+      <div class="view-toggle">
+        <button id="grid-toggle-btn" class="toggle-btn active" onclick="switchView('grid')">Grid</button>
+        <button id="map-toggle-btn" class="toggle-btn" onclick="switchView('map')">Map</button>
+      </div>
     </div>
-    <input type="text" id="search-input" class="search-box" placeholder="Filter companies, sectors, regions..." />
   </header>
 
-  <div class="grid-container">
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 48px; text-align: center;">Logo</th>
-          <th>Company Name</th>
-          <th>Country</th>
-          <th>Description</th>
-          <th>Website</th>
-          <th>Number of employees</th>
-          <th>Founded year</th>
-          <th>Revenue range</th>
-          <th>Coordinates</th>
-          <th>Activity</th>
-          <th>Sub-industry</th>
-          <th>Industry</th>
-          <th>Sector</th>
-          <th>Region</th>
-        </tr>
-      </thead>
-      <tbody id="grid-body"></tbody>
-    </table>
-  </div>
+  <main>
+    <div id="loading-state">
+      <div class="spinner"></div>
+      <p>Loading records from Google Sheets...</p>
+    </div>
+
+    <div id="grid-view"></div>
+    <div id="map-view"></div>
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    let directory = [];
+    // Live Google Sheet URL (GID: 1224566365)
+    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1R8aekz9Tx803PiGKX9AjB_z8qUD19_JU/gviz/tq?tqx=out:json&gid=1224566365';
 
-    function cleanDomain(url) {
-      if (!url) return "—";
-      return url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-    }
+    let allCompanies = [];
+    let mapInstance = null;
+    let markersLayer = null;
 
-    function renderRows(items) {
-      const tbody = document.getElementById("grid-body");
-      document.getElementById("record-count").textContent = `${items.length} ${items.length === 1 ? 'record' : 'records'}`;
+    async function fetchSheetData() {
+      try {
+        const response = await fetch(SHEET_URL);
+        const text = await response.text();
 
-      if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 40px; color: var(--text-muted);">No records found matching your filter.</td></tr>`;
-        return;
-      }
+        // Extract JSON from Google's callback wrapper
+        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
 
-      tbody.innerHTML = items.map(c => `
-        <tr>
-          <td class="col-center">
-            <div class="logo-container">
-              <img class="logo-img" src="${c.logo || ''}" alt="" onerror="this.style.display='none';" />
-            </div>
-          </td>
-          <td class="company-cell">${c.companyName || "—"}</td>
-          <td><span class="badge">${c.country || "—"}</span></td>
-          <td class="desc-cell" title="${c.description || ''}">${c.description || "—"}</td>
-          <td><a class="cell-url" href="${c.website || '#'}" target="_blank" rel="noopener">${cleanDomain(c.website)}</a></td>
-          <td class="mono-cell">${c.numberOfEmployees || "—"}</td>
-          <td class="mono-cell">${c.foundedYear || "—"}</td>
-          <td class="mono-cell">${c.revenueRange || "—"}</td>
-          <td class="mono-cell" style="color: var(--text-muted);">${c.coordinates || "—"}</td>
-          <td>${c.activity || "—"}</td>
-          <td>${c.subIndustry || "—"}</td>
-          <td>${c.industry || "—"}</td>
-          <td>${c.sector || "—"}</td>
-          <td><span class="badge">${c.region || "—"}</span></td>
-        </tr>
-      `).join("");
-    }
+        // Map column headers
+        const headers = data.table.cols.map(c => (c.label ? c.label.trim() : ''));
 
-    fetch('./data.json')
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to load data.json");
-        return res.json();
-      })
-      .then(data => {
-        directory = data;
-        renderRows(directory);
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById("record-count").textContent = "Error loading data";
-      });
+        // Parse rows
+        const records = data.table.rows.map(row => {
+          const item = {};
+          row.c.forEach((cell, idx) => {
+            const header = headers[idx];
+            if (header) {
+              item[header] = cell ? cell.v : '';
+            }
+          });
 
-    document.getElementById("search-input").addEventListener("input", (e) => {
-      const query = e.target.value.toLowerCase().trim();
-      const filtered = directory.filter(row =>
-        Object.values(row).some(v => String(v).toLowerCase().includes(query))
-      );
-      renderRows(filtered);
-    });
-  </script>
-</body>
-</html>
+          // Parse coordinates string ("lat, lng") if available
+          if (item['Coordinates'] && typeof item['Coordinates'] === 'string') {
