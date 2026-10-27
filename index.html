@@ -153,7 +153,7 @@
       background-color: var(--row-hover);
     }
 
-    /* Fixed & Proportional Column Widths */
+    /* Column Width Formatting */
     .col-logo {
       width: 44px;
       text-align: center;
@@ -183,11 +183,10 @@
     }
 
     .col-web {
-      width: 130px;
-      max-width: 130px;
+      width: 50px;
+      max-width: 50px;
+      text-align: center;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .col-emp {
@@ -234,13 +233,30 @@
       vertical-align: middle;
     }
 
-    a.cell-link {
+    .web-icon-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: #232733;
+      border: 1px solid var(--border);
       color: var(--accent);
       text-decoration: none;
+      transition: all 0.15s ease;
     }
 
-    a.cell-link:hover {
-      text-decoration: underline;
+    .web-icon-link:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .web-icon-link svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
     }
 
     .pill {
@@ -425,9 +441,20 @@
           ? `<img src="${logo}" class="table-logo" alt="${name}" onerror="this.onerror=null; this.outerHTML='<span class=\\'logo-fallback\\'>${name[0] || 'C'}</span>'" />`
           : `<span class="logo-fallback">${name[0] || 'C'}</span>`;
 
-        const websiteHtml = website
-          ? `<a href="${website.startsWith('http') ? website : 'https://' + website}" target="_blank" rel="noopener noreferrer" class="cell-link" title="${website}">${website}</a>`
-          : '-';
+        // Clickable external link icon
+        let websiteHtml = '<span style="color: var(--text-muted);">-</span>';
+        if (website && website !== '-') {
+          const websiteUrl = website.startsWith('http') ? website : 'https://' + website;
+          websiteHtml = `
+            <a href="${websiteUrl}" target="_blank" rel="noopener noreferrer" class="web-icon-link" title="${website}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          `;
+        }
 
         tr.innerHTML = `
           <td class="col-logo">${logoHtml}</td>
