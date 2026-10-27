@@ -47,9 +47,6 @@
       font-size: 1.25rem;
       font-weight: 700;
       color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
     }
 
     .controls {
@@ -124,7 +121,6 @@
       border-collapse: collapse;
       text-align: left;
       font-size: 0.82rem;
-      white-space: nowrap;
     }
 
     thead {
@@ -136,32 +132,81 @@
     }
 
     th {
-      padding: 0.75rem 1rem;
+      padding: 0.75rem 0.85rem;
       font-weight: 600;
       color: #d1d5db;
       border-bottom: 1px solid var(--border);
       text-transform: uppercase;
       font-size: 0.72rem;
       letter-spacing: 0.5px;
+      white-space: nowrap;
     }
 
     td {
-      padding: 0.65rem 1rem;
+      padding: 0.65rem 0.85rem;
       border-bottom: 1px solid #1f2330;
       color: #e5e7eb;
-      max-width: 320px;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      vertical-align: middle;
     }
 
     tbody tr:hover {
       background-color: var(--row-hover);
     }
 
-    .logo-cell {
+    /* Fixed & Proportional Column Widths */
+    .col-logo {
       width: 44px;
       text-align: center;
       padding: 0.4rem 0.5rem;
+    }
+
+    .col-name {
+      width: 160px;
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .col-country {
+      width: 120px;
+      white-space: nowrap;
+    }
+
+    .col-desc {
+      min-width: 320px;
+      max-width: 480px;
+      white-space: normal;
+      line-height: 1.4;
+      color: #cbd5e1;
+      word-break: break-word;
+    }
+
+    .col-web {
+      width: 120px;
+      max-width: 120px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .col-emp {
+      width: 100px;
+      white-space: nowrap;
+    }
+
+    .col-year {
+      width: 75px;
+      white-space: nowrap;
+    }
+
+    .col-rev {
+      width: 100px;
+      white-space: nowrap;
+    }
+
+    .col-misc {
+      white-space: nowrap;
     }
 
     .table-logo {
@@ -189,16 +234,6 @@
       vertical-align: middle;
     }
 
-    .desc-cell {
-      max-width: 280px;
-      white-space: normal;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      line-height: 1.35;
-      color: var(--text-muted);
-    }
-
     a.cell-link {
       color: var(--accent);
       text-decoration: none;
@@ -216,6 +251,43 @@
       border-radius: 4px;
       font-size: 0.75rem;
     }
+
+    /* Footer Pagination */
+    footer {
+      padding: 0.65rem 1.5rem;
+      background: #161922;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      font-size: 0.85rem;
+    }
+
+    .pagination-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .page-btn {
+      background: #232733;
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.8rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -223,7 +295,7 @@
   <header>
     <div class="brand">Bizgrid</div>
     <div class="controls">
-      <input type="text" id="search-input" class="search-bar" placeholder="Filter by company, industry, country, or sector..." />
+      <input type="text" id="search-input" class="search-bar" placeholder="Search companies, countries, industries..." />
       <span class="record-count" id="record-count">0 records</span>
     </div>
   </header>
@@ -238,20 +310,19 @@
       <table>
         <thead>
           <tr>
-            <th>Logo</th>
-            <th>Company Name</th>
-            <th>Country</th>
-            <th>Description</th>
-            <th>Website</th>
-            <th>Employees</th>
-            <th>Founded</th>
-            <th>Revenue</th>
-            <th>Coordinates</th>
-            <th>Activity</th>
-            <th>Sub-industry</th>
-            <th>Industry</th>
-            <th>Sector</th>
-            <th>Region</th>
+            <th class="col-logo">Logo</th>
+            <th class="col-name">Company Name</th>
+            <th class="col-country">Country</th>
+            <th class="col-desc">Description</th>
+            <th class="col-web">Website</th>
+            <th class="col-emp">Employees</th>
+            <th class="col-year">Founded</th>
+            <th class="col-rev">Revenue</th>
+            <th class="col-misc">Activity</th>
+            <th class="col-misc">Sub-industry</th>
+            <th class="col-misc">Industry</th>
+            <th class="col-misc">Sector</th>
+            <th class="col-misc">Region</th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
@@ -259,29 +330,39 @@
     </div>
   </main>
 
+  <footer id="table-footer" style="display: none;">
+    <span id="page-info" style="color: var(--text-muted);">Page 1 of 1</span>
+    <div class="pagination-actions">
+      <button class="page-btn" id="prev-btn" onclick="goToPage(currentPage - 1)">Previous</button>
+      <button class="page-btn" id="next-btn" onclick="goToPage(currentPage + 1)">Next</button>
+    </div>
+  </footer>
+
   <script>
-    // Explicitly targeting the "Dataset" sheet tab via GID and sheet name
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1R8aekz9Tx803PiGKX9AjB_z8qUD19_JU/gviz/tq?tqx=out:json&sheet=Dataset&gid=1224566365';
+    const ROWS_PER_PAGE = 100;
 
     let allCompanies = [];
+    let filteredCompanies = [];
+    let currentPage = 1;
 
     async function fetchDataset() {
       try {
         const response = await fetch(SHEET_URL);
         const text = await response.text();
 
-        // Extract JSON string from the Google Visualization response wrapper
+        // Extract JSON string from Google Visualization response wrapper
         const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
         const json = JSON.parse(jsonString);
 
-        // Normalize header names to match the first row
         const headers = json.table.cols.map(c => (c.label ? c.label.trim() : ''));
 
         return json.table.rows.map(row => {
           const entry = {};
           row.c.forEach((cell, idx) => {
             const key = headers[idx];
-            if (key) {
+            // Skip Coordinates column entirely
+            if (key && key !== 'Coordinates') {
               entry[key] = (cell && cell.v !== null && cell.v !== undefined) ? cell.v : '';
             }
           });
@@ -293,20 +374,37 @@
       }
     }
 
-    function renderTable(data) {
+    function renderCurrentPage() {
       const tbody = document.getElementById('table-body');
+      const tableContainer = document.getElementById('table-container');
       const countLabel = document.getElementById('record-count');
-      tbody.innerHTML = '';
-      countLabel.textContent = `${data.length.toLocaleString()} records`;
+      const pageInfo = document.getElementById('page-info');
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
 
-      if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 3rem; color: var(--text-muted);">No matching records found.</td></tr>`;
+      tbody.innerHTML = '';
+      countLabel.textContent = `${filteredCompanies.length.toLocaleString()} records`;
+
+      const totalPages = Math.ceil(filteredCompanies.length / ROWS_PER_PAGE) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages;
+
+      if (filteredCompanies.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 3rem; color: var(--text-muted);">No matching records found.</td></tr>`;
         return;
       }
 
+      const start = (currentPage - 1) * ROWS_PER_PAGE;
+      const end = start + ROWS_PER_PAGE;
+      const pageItems = filteredCompanies.slice(start, end);
+
       const fragment = document.createDocumentFragment();
 
-      data.forEach(item => {
+      pageItems.forEach(item => {
         const tr = document.createElement('tr');
 
         const logo = item['Logo'] || '';
@@ -317,79 +415,83 @@
         const employees = item['Number of employees'] || '-';
         const founded = item['Founded year'] || '-';
         const revenue = item['Revenue range'] || '-';
-        const coords = item['Coordinates'] || '-';
         const activity = item['Activity'] || '-';
         const subIndustry = item['Sub-industry'] || '-';
         const industry = item['Industry'] || '-';
         const sector = item['Sector'] || '-';
         const region = item['Region'] || '-';
 
-        // Logo cell renderer
         const logoHtml = logo
           ? `<img src="${logo}" class="table-logo" alt="${name}" onerror="this.onerror=null; this.outerHTML='<span class=\\'logo-fallback\\'>${name[0] || 'C'}</span>'" />`
           : `<span class="logo-fallback">${name[0] || 'C'}</span>`;
 
-        // Website link renderer
         const websiteHtml = website
-          ? `<a href="${website.startsWith('http') ? website : 'https://' + website}" target="_blank" rel="noopener noreferrer" class="cell-link">${website}</a>`
+          ? `<a href="${website.startsWith('http') ? website : 'https://' + website}" target="_blank" rel="noopener noreferrer" class="cell-link" title="${website}">${website}</a>`
           : '-';
 
         tr.innerHTML = `
-          <td class="logo-cell">${logoHtml}</td>
-          <td><strong>${name}</strong></td>
-          <td>${country !== '-' ? `<span class="pill">${country}</span>` : '-'}</td>
-          <td><div class="desc-cell" title="${desc}">${desc}</div></td>
-          <td>${websiteHtml}</td>
-          <td>${employees}</td>
-          <td>${founded}</td>
-          <td>${revenue}</td>
-          <td style="color: var(--text-muted);">${coords}</td>
-          <td>${activity}</td>
-          <td>${subIndustry}</td>
-          <td>${industry}</td>
-          <td>${sector}</td>
-          <td>${region}</td>
+          <td class="col-logo">${logoHtml}</td>
+          <td class="col-name" title="${name}"><strong>${name}</strong></td>
+          <td class="col-country">${country !== '-' ? `<span class="pill">${country}</span>` : '-'}</td>
+          <td class="col-desc">${desc}</td>
+          <td class="col-web">${websiteHtml}</td>
+          <td class="col-emp">${employees}</td>
+          <td class="col-year">${founded}</td>
+          <td class="col-rev">${revenue}</td>
+          <td class="col-misc">${activity}</td>
+          <td class="col-misc">${subIndustry}</td>
+          <td class="col-misc">${industry}</td>
+          <td class="col-misc">${sector}</td>
+          <td class="col-misc">${region}</td>
         `;
 
         fragment.appendChild(tr);
       });
 
       tbody.appendChild(fragment);
+      tableContainer.scrollTop = 0;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderCurrentPage();
     }
 
     function applySearch() {
       const query = document.getElementById('search-input').value.toLowerCase().trim();
+      currentPage = 1;
 
       if (!query) {
-        renderTable(allCompanies);
-        return;
+        filteredCompanies = allCompanies;
+      } else {
+        filteredCompanies = allCompanies.filter(item => {
+          return (
+            (item['Company Name'] || '').toString().toLowerCase().includes(query) ||
+            (item['Country'] || '').toString().toLowerCase().includes(query) ||
+            (item['Description'] || '').toString().toLowerCase().includes(query) ||
+            (item['Industry'] || '').toString().toLowerCase().includes(query) ||
+            (item['Sector'] || '').toString().toLowerCase().includes(query) ||
+            (item['Sub-industry'] || '').toString().toLowerCase().includes(query) ||
+            (item['Activity'] || '').toString().toLowerCase().includes(query) ||
+            (item['Region'] || '').toString().toLowerCase().includes(query)
+          );
+        });
       }
 
-      const filtered = allCompanies.filter(item => {
-        return (
-          (item['Company Name'] || '').toString().toLowerCase().includes(query) ||
-          (item['Country'] || '').toString().toLowerCase().includes(query) ||
-          (item['Description'] || '').toString().toLowerCase().includes(query) ||
-          (item['Industry'] || '').toString().toLowerCase().includes(query) ||
-          (item['Sector'] || '').toString().toLowerCase().includes(query) ||
-          (item['Sub-industry'] || '').toString().toLowerCase().includes(query) ||
-          (item['Activity'] || '').toString().toLowerCase().includes(query) ||
-          (item['Region'] || '').toString().toLowerCase().includes(query)
-        );
-      });
-
-      renderTable(filtered);
+      renderCurrentPage();
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('search-input').addEventListener('input', applySearch);
 
       allCompanies = await fetchDataset();
+      filteredCompanies = allCompanies;
 
       document.getElementById('loading-state').style.display = 'none';
       document.getElementById('table-container').style.display = 'block';
+      document.getElementById('table-footer').style.display = 'flex';
 
-      renderTable(allCompanies);
+      renderCurrentPage();
     });
   </script>
 </body>
