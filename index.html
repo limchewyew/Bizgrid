@@ -304,3 +304,164 @@
 
           // Parse coordinates string ("lat, lng") if available
           if (item['Coordinates'] && typeof item['Coordinates'] === 'string') {
+            const coords = item['Coordinates'].split(',').map(s => parseFloat(s.trim()));
+            if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+              item.lat = coords[0];
+              item.lng = coords[1];
+            }
+          }
+
+          return item;
+        });
+
+        return records;
+      } catch (err) {
+        console.error('Error loading Google Sheet data:', err);
+        return [];
+      }
+    }
+
+    function renderGrid(companies) {
+      const container = document.getElementById('grid-view');
+      container.innerHTML = '';
+
+      if (!companies.length) {
+        container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 4rem 0;">No matching records found.</div>`;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      companies.forEach(company => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const name = company['Company Name'] || 'Unnamed';
+        const logo = company['Logo'];
+        const desc = company['Description'] || 'No description available.';
+        const website = company['Website'] || '';
+        const country = company['Country'] || '';
+        const sector = company['Sector'] || company['Industry'] || '';
+
+        const logoHtml = logo
+          ? `<img src="${logo}" class="logo-img" alt="${name}" onerror="this.onerror=null; this.outerHTML='<div class=\\'logo-placeholder\\'>${name[0] || 'C'}</div>'"/>`
+          : `<div class="logo-placeholder">${name[0] || 'C'}</div>`;
+
+        card.innerHTML = `
+          <div>
+            <div class="card-header">
+              ${logoHtml}
+              <div class="company-name" title="${name}">${name}</div>
+            </div>
+            <div class="tags">
+              ${country ? `<span class="tag">${country}</span>` : ''}
+              ${sector ? `<span class="tag">${sector}</span>` : ''}
+            </div>
+            <p class="company-desc">${desc}</p>
+          </div>
+          <div class="card-footer">
+            <span style="color: var(--text-muted);">${company['Founded year'] ? 'Est. ' + company['Founded year'] : ''}</span>
+            ${website ? `<a href="${website.startsWith('http') ? website : 'https://' + website}" target="_blank" rel="noopener noreferrer" class="website-link">Visit →</a>` : ''}
+          </div>
+        `;
+
+        fragment.appendChild(card);
+      });
+
+      container.appendChild(fragment);
+    }
+
+    function updateMapMarkers(companies) {
+      if (!mapInstance) return;
+
+      markersLayer.clearLayers();
+
+      companies.forEach(company => {
+        if (company.lat && company.lng) {
+          const marker = L.circleMarker([company.lat, company.lng], {
+            radius: 6,
+            fillColor: '#3b82f6',
+            color: '#ffffff',
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+          });
+
+          marker.bindPopup(`
+            <div style="font-family: sans-serif; font-size: 13px;">
+              <strong>${company['Company Name'] || 'Company'}</strong><br/>
+              <span style="color: #666;">${company['Country'] || ''}</span><br/>
+              <p style="margin: 4px 0;">${(company['Description'] || '').substring(0, 90)}...</p>
+              ${company['Website'] ? `<a href="${company['Website'].startsWith('http') ? company['Website'] : 'https://' + company['Website']}" target="_blank">Website</a>` : ''}
+            </div>
+          `);
+
+          markersLayer.addLayer(marker);
+        }
+      });
+    }
+
+    function switchView(viewType) {
+      const gridView = document.getElementById('grid-view');
+      const mapView = document.getElementById('map-view');
+      const gridBtn = document.getElementById('grid-toggle-btn');
+      const mapBtn = document.getElementById('map-toggle-btn');
+
+      if (viewType === 'grid') {
+        gridView.style.display = 'grid';
+        mapView.style.display = 'none';
+        gridBtn.classList.add('active');
+        mapBtn.classList.remove('active');
+      } else {
+        gridView.style.display = 'none';
+        mapView.style.display = 'block';
+        gridBtn.classList.remove('active');
+        mapBtn.classList.add('active');
+
+        if (!mapInstance) {
+          mapInstance = L.map('map-view').setView([20, 0], 2);
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap & CartoDB',
+            maxZoom: 19
+          }).addTo(mapInstance);
+
+          markersLayer = L.layerGroup().addTo(mapInstance);
+        }
+
+        setTimeout(() => {
+          mapInstance.invalidateSize();
+          filterAndRender();
+        }, 100);
+      }
+    }
+
+    function filterAndRender() {
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+
+      const filtered = allCompanies.filter(c => {
+        if (!query) return true;
+        const name = (c['Company Name'] || '').toLowerCase();
+        const country = (c['Country'] || '').toLowerCase();
+        const desc = (c['Description'] || '').toLowerCase();
+        const ind = (c['Industry'] || '').toLowerCase();
+        const sec = (c['Sector'] || '').toLowerCase();
+
+        return name.includes(query) || country.includes(query) || desc.includes(query) || ind.includes(query) || sec.includes(query);
+      });
+
+      renderGrid(filtered);
+      updateMapMarkers(filtered);
+    }
+
+    // Initialize application
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('search-input').addEventListener('input', filterAndRender);
+
+      allCompanies = await fetchSheetData();
+
+      document.getElementById('loading-state').style.display = 'none';
+      filterAndRender();
+    });
+  </script>
+</body>
+</html>
