@@ -1,0 +1,50 @@
+[
+  {
+    "logo": "https://logo.clearbit.com/apple.com",
+    "companyName": "Apple Inc.",
+    "country": "United States",
+    "description": "Designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories.",
+    "website": "https://www.apple.com",
+    "numberOfEmployees": "161,000",
+    "foundedYear": 1976,
+    "revenueRange": "> $100B",
+    "coordinates": "37.3349° N, 122.0090° W",
+    "activity": "Hardware & Consumer Tech",
+    "subIndustry": "Technology Hardware & Peripherals",
+    "industry": "Technology Hardware",
+    "sector": "Information Technology",
+    "region": "Americas"
+  },
+  {
+    "logo": "https://logo.clearbit.com/shell.com",
+    "companyName": "Shell plc",
+    "country": "United Kingdom",
+    "description": "Global group of energy and petrochemical companies exploring oil, gas, and renewables.",
+    "website": "https://www.shell.com",
+    "numberOfEmployees": "90,000",
+    "foundedYear": 1907,
+    "revenueRange": "> $100B",
+    "coordinates": "51.5033° N, 0.1195° W",
+    "activity": "Integrated Energy & Trading",
+    "subIndustry": "Integrated Oil & Gas",
+    "industry": "Energy",
+    "sector": "Energy",
+    "region": "EMEA"
+  },
+  {
+    "logo": "https://logo.clearbit.com/singtel.com",
+    "companyName": "Singtel",
+    "country": "Singapore",
+    "description": "Telecommunications conglomerate offering mobile, broadband, fixed line, and enterprise digital solutions.",
+    "website": "https://www.singtel.com",
+    "numberOfEmployees": "24,000",
+    "foundedYear": 1879,
+    "revenueRange": "$10B - $50B",
+    "coordinates": "1.2990° N, 103.8458° E",
+    "activity": "Telecommunications & Digital Services",
+    "subIndustry": "Diversified Telecommunication Services",
+    "industry": "Telecommunication Services",
+    "sector": "Communication Services",
+    "region": "APAC"
+  }
+]
