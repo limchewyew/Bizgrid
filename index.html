@@ -119,7 +119,6 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      text-align: left;
       font-size: 0.82rem;
     }
 
@@ -140,6 +139,7 @@
       font-size: 0.72rem;
       letter-spacing: 0.5px;
       white-space: nowrap;
+      text-align: center; /* Centralized headers */
     }
 
     td {
@@ -147,16 +147,16 @@
       border-bottom: 1px solid #1f2330;
       color: #e5e7eb;
       vertical-align: middle;
+      text-align: center; /* Centralized columns */
     }
 
     tbody tr:hover {
       background-color: var(--row-hover);
     }
 
-    /* Column Width Formatting */
+    /* Column Widths & Alignments */
     .col-logo {
-      width: 44px;
-      text-align: center;
+      width: 50px;
       padding: 0.4rem 0.5rem;
     }
 
@@ -173,6 +173,12 @@
       white-space: nowrap;
     }
 
+    /* Description kept left-aligned with natural wrapping */
+    th.col-desc,
+    td.col-desc {
+      text-align: left;
+    }
+
     .col-desc {
       min-width: 320px;
       max-width: 480px;
@@ -182,25 +188,27 @@
       word-break: break-word;
     }
 
+    /* Extra space and centering for Website column */
     .col-web {
-      width: 50px;
-      max-width: 50px;
-      text-align: center;
+      width: 80px;
+      min-width: 80px;
+      padding-right: 1.5rem; /* Gap between website and employees */
       white-space: nowrap;
     }
 
     .col-emp {
-      width: 100px;
+      width: 110px;
       white-space: nowrap;
+      padding-left: 0.75rem;
     }
 
     .col-year {
-      width: 75px;
+      width: 80px;
       white-space: nowrap;
     }
 
     .col-rev {
-      width: 100px;
+      width: 110px;
       white-space: nowrap;
     }
 
@@ -245,6 +253,7 @@
       color: var(--accent);
       text-decoration: none;
       transition: all 0.15s ease;
+      margin: 0 auto;
     }
 
     .web-icon-link:hover {
@@ -367,7 +376,6 @@
         const response = await fetch(SHEET_URL);
         const text = await response.text();
 
-        // Extract JSON string from Google Visualization response wrapper
         const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
         const json = JSON.parse(jsonString);
 
@@ -377,7 +385,6 @@
           const entry = {};
           row.c.forEach((cell, idx) => {
             const key = headers[idx];
-            // Skip Coordinates column entirely
             if (key && key !== 'Coordinates') {
               entry[key] = (cell && cell.v !== null && cell.v !== undefined) ? cell.v : '';
             }
@@ -441,7 +448,6 @@
           ? `<img src="${logo}" class="table-logo" alt="${name}" onerror="this.onerror=null; this.outerHTML='<span class=\\'logo-fallback\\'>${name[0] || 'C'}</span>'" />`
           : `<span class="logo-fallback">${name[0] || 'C'}</span>`;
 
-        // Clickable external link icon
         let websiteHtml = '<span style="color: var(--text-muted);">-</span>';
         if (website && website !== '-') {
           const websiteUrl = website.startsWith('http') ? website : 'https://' + website;
