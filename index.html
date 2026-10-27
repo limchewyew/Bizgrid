@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bizgrid</title>
+  <style>
+    :root {
+      --bg: #09090b;
+      --surface: #121215;
+      --surface-hover: #18181d;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.04);
+      --text-main: #f5f5f7;
+      --text-muted: #86868b;
+      --accent: #2997ff;
+      --badge-bg: rgba(255, 255, 255, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Bar */
+    header {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      background: rgba(9, 9, 11, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .count-indicator {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .search-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-main);
+      padding: 6px 12px;
+      font-size: 13px;
+      width: 260px;
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .search-box:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(41, 151, 255, 0.5);
+      box-shadow: 0 0 0 3px rgba(41, 151, 255, 0.15);
+    }
+
+    /* Data Grid Layout */
+    .grid-container {
+      flex: 1;
+      overflow: auto;
+      background: var(--bg);
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      min-width: 1800px;
+      font-size: 13px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #111115;
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border-subtle);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    tbody tr {
+      transition: background-color 0.12s ease;
+    }
+
+    tbody tr:hover {
+      background-color: var(--surface-hover);
+    }
+
+    tbody td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      border-right: 1px solid var(--border-subtle);
+      color: #cfcfd4;
+      white-space: nowrap;
+      vertical-align: middle;
+      font-weight: 400;
+    }
+
+    /* Cell Renderers */
+    .col-center {
+      text-align: center;
+    }
+
+    .logo-container {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .company-cell {
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .desc-cell {
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-muted);
+    }
+
+    .mono-cell {
+      font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--badge-bg);
+      font-size: 11px;
+      color: #a1a1a6;
+      border: 1px solid var(--border-subtle);
+    }
+
+    a.cell-url {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a.cell-url:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand-section">
+      <h1 class="brand-title">Bizgrid</h1>
+      <span class="count-indicator" id="record-count">Loading...</span>
+    </div>
+    <input type="text" id="search-input" class="search-box" placeholder="Filter companies, sectors, regions..." />
+  </header>
+
+  <div class="grid-container">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 48px; text-align: center;">Logo</th>
+          <th>Company Name</th>
+          <th>Country</th>
+          <th>Description</th>
+          <th>Website</th>
+          <th>Number of employees</th>
+          <th>Founded year</th>
+          <th>Revenue range</th>
+          <th>Coordinates</th>
+          <th>Activity</th>
+          <th>Sub-industry</th>
+          <th>Industry</th>
+          <th>Sector</th>
+          <th>Region</th>
+        </tr>
+      </thead>
+      <tbody id="grid-body"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let directory = [];
+
+    function cleanDomain(url) {
+      if (!url) return "—";
+      return url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+    }
+
+    function renderRows(items) {
+      const tbody = document.getElementById("grid-body");
+      document.getElementById("record-count").textContent = `${items.length} ${items.length === 1 ? 'record' : 'records'}`;
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 40px; color: var(--text-muted);">No records found matching your filter.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(c => `
+        <tr>
+          <td class="col-center">
+            <div class="logo-container">
+              <img class="logo-img" src="${c.logo || ''}" alt="" onerror="this.style.display='none';" />
+            </div>
+          </td>
+          <td class="company-cell">${c.companyName || "—"}</td>
+          <td><span class="badge">${c.country || "—"}</span></td>
+          <td class="desc-cell" title="${c.description || ''}">${c.description || "—"}</td>
+          <td><a class="cell-url" href="${c.website || '#'}" target="_blank" rel="noopener">${cleanDomain(c.website)}</a></td>
+          <td class="mono-cell">${c.numberOfEmployees || "—"}</td>
+          <td class="mono-cell">${c.foundedYear || "—"}</td>
+          <td class="mono-cell">${c.revenueRange || "—"}</td>
+          <td class="mono-cell" style="color: var(--text-muted);">${c.coordinates || "—"}</td>
+          <td>${c.activity || "—"}</td>
+          <td>${c.subIndustry || "—"}</td>
+          <td>${c.industry || "—"}</td>
+          <td>${c.sector || "—"}</td>
+          <td><span class="badge">${c.region || "—"}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    fetch('./data.json')
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to load data.json");
+        return res.json();
+      })
+      .then(data => {
+        directory = data;
+        renderRows(directory);
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById("record-count").textContent = "Error loading data";
+      });
+
+    document.getElementById("search-input").addEventListener("input", (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const filtered = directory.filter(row =>
+        Object.values(row).some(v => String(v).toLowerCase().includes(query))
+      );
+      renderRows(filtered);
+    });
+  </script>
+</body>
+</html>
