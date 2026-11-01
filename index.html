@@ -248,6 +248,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      overflow: visible;
     }
 
     .table-logo {
@@ -277,10 +278,10 @@
 
     .logo-tooltip {
       position: absolute;
-      left: 50%;
-      top: calc(100% + 12px);
-      transform: translateX(-50%) translateY(6px);
-      width: 160px;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%) scale(0.96);
+      width: 150px;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.15s ease, transform 0.15s ease;
@@ -295,20 +296,20 @@
     .logo-tooltip::before {
       content: "";
       position: absolute;
-      top: -6px;
-      left: 50%;
-      transform: translateX(-50%) rotate(45deg);
+      left: -6px;
+      top: 50%;
+      transform: translateY(-50%) rotate(45deg);
       width: 10px;
       height: 10px;
       background: rgba(17, 24, 39, 0.96);
       border-left: 1px solid var(--border);
-      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
     }
 
     .logo-cell:hover .logo-tooltip,
     .logo-cell:focus-within .logo-tooltip {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(-50%) scale(1);
     }
 
     .logo-tooltip img {
