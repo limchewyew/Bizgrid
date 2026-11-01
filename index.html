@@ -143,7 +143,7 @@
         text-align: center;
         user-select: none;
     }
-    
+
     /* Sortable Header Styling */
     th.sortable {
       cursor: pointer;
@@ -243,6 +243,13 @@
       white-space: nowrap;
     }
 
+    .logo-cell {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .table-logo {
       width: 26px;
       height: 26px;
@@ -266,6 +273,51 @@
       font-size: 0.75rem;
       display: inline-block;
       vertical-align: middle;
+    }
+
+    .logo-tooltip {
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 12px);
+      transform: translateX(-50%) translateY(6px);
+      width: 160px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      background: rgba(17, 24, 39, 0.96);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
+      z-index: 30;
+    }
+
+    .logo-tooltip::before {
+      content: "";
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      width: 10px;
+      height: 10px;
+      background: rgba(17, 24, 39, 0.96);
+      border-left: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+    }
+
+    .logo-cell:hover .logo-tooltip,
+    .logo-cell:focus-within .logo-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .logo-tooltip img {
+      display: block;
+      width: 100%;
+      max-height: 160px;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 6px;
     }
 
     .web-icon-link {
@@ -363,7 +415,9 @@
         <thead>
           <tr>
             <th class="col-logo">Logo</th>
-            <th class="col-name">Company Name</th>
+            <th class="col-name sortable" onclick="toggleSort('Company Name')">
+              Company Name <span class="sort-icon" id="sort-name">↕</span>
+            </th>
             <th class="col-country">Country</th>
             <th class="col-desc">Description</th>
             <th class="col-web">Website</th>
@@ -431,6 +485,15 @@
     let currentSortColumn = null;
     let currentSortOrder = 'none'; // 'asc', 'desc', or 'none'
 
+    function escapeHtml(value = '') {
+      return value.toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     async function fetchDataset() {
       try {
         const response = await fetch(SHEET_URL);
@@ -474,6 +537,10 @@
         return isNaN(yr) ? 0 : yr;
       }
 
+      if (column === 'Company Name') {
+        return cleanVal;
+      }
+
       return cleanVal;
     }
 
@@ -494,14 +561,17 @@
     }
 
     function updateSortHeaders() {
+      const nameIcon = document.getElementById('sort-name');
       const empIcon = document.getElementById('sort-emp');
       const yearIcon = document.getElementById('sort-year');
       const revIcon = document.getElementById('sort-rev');
 
+      nameIcon.textContent = '↕';
       empIcon.textContent = '↕';
       yearIcon.textContent = '↕';
       revIcon.textContent = '↕';
 
+      nameIcon.parentElement.classList.remove('sort-active');
       empIcon.parentElement.classList.remove('sort-active');
       yearIcon.parentElement.classList.remove('sort-active');
       revIcon.parentElement.classList.remove('sort-active');
@@ -510,7 +580,10 @@
 
       const symbol = currentSortOrder === 'asc' ? '▲' : '▼';
 
-      if (currentSortColumn === 'Number of employees') {
+      if (currentSortColumn === 'Company Name') {
+        nameIcon.textContent = symbol;
+        nameIcon.parentElement.classList.add('sort-active');
+      } else if (currentSortColumn === 'Number of employees') {
         empIcon.textContent = symbol;
         empIcon.parentElement.classList.add('sort-active');
       } else if (currentSortColumn === 'Founded year') {
@@ -545,6 +618,18 @@
       // 2. Custom Sort
       if (currentSortColumn && currentSortOrder !== 'none') {
         results.sort((a, b) => {
+          if (currentSortColumn === 'Company Name') {
+            const aName = (a['Company Name'] || '').toString().trim().toLowerCase();
+            const bName = (b['Company Name'] || '').toString().trim().toLowerCase();
+
+            if (!aName && !bName) return 0;
+            if (!aName) return 1;
+            if (!bName) return -1;
+
+            const comparison = aName.localeCompare(bName);
+            return currentSortOrder === 'asc' ? comparison : comparison * -1;
+          }
+
           const rankA = getRank(currentSortColumn, a[currentSortColumn]);
           const rankB = getRank(currentSortColumn, b[currentSortColumn]);
 
@@ -611,15 +696,19 @@
         const sector = item['Sector'] || '-';
         const region = item['Region'] || '-';
 
+        const safeName = escapeHtml(name);
+        const safeLogo = escapeHtml(logo);
+
         const logoHtml = logo
-          ? `<img src="${logo}" class="table-logo" alt="${name}" onerror="this.onerror=null; this.outerHTML='<span class=\\'logo-fallback\\'>${name[0] || 'C'}</span>'" />`
-          : `<span class="logo-fallback">${name[0] || 'C'}</span>`;
+          ? `<span class="logo-cell"><img src="${safeLogo}" class="table-logo" alt="${safeName}" onerror="this.onerror=null; this.outerHTML='<span class=\\'logo-fallback\\'>${safeName.charAt(0) || 'C'}</span>'" /><span class="logo-tooltip"><img src="${safeLogo}" alt="${safeName} logo" /></span></span>`
+          : `<span class="logo-fallback">${safeName.charAt(0) || 'C'}</span>`;
 
         let websiteHtml = '<span style="color: var(--text-muted);">-</span>';
         if (website && website !== '-') {
+          const safeWebsite = escapeHtml(website);
           const websiteUrl = website.startsWith('http') ? website : 'https://' + website;
           websiteHtml = `
-            <a href="${websiteUrl}" target="_blank" rel="noopener noreferrer" class="web-icon-link" title="${website}">
+            <a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer" class="web-icon-link" title="${safeWebsite}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
@@ -631,18 +720,18 @@
 
         tr.innerHTML = `
           <td class="col-logo">${logoHtml}</td>
-          <td class="col-name" title="${name}"><strong>${name}</strong></td>
-          <td class="col-country">${country !== '-' ? `<span class="pill">${country}</span>` : '-'}</td>
-          <td class="col-desc">${desc}</td>
+          <td class="col-name" title="${safeName}"><strong>${safeName}</strong></td>
+          <td class="col-country">${country !== '-' ? `<span class="pill">${escapeHtml(country)}</span>` : '-'}</td>
+          <td class="col-desc">${escapeHtml(desc)}</td>
           <td class="col-web">${websiteHtml}</td>
-          <td class="col-emp">${employees}</td>
-          <td class="col-year">${founded}</td>
-          <td class="col-rev">${revenue}</td>
-          <td class="col-misc">${activity}</td>
-          <td class="col-misc">${subIndustry}</td>
-          <td class="col-misc">${industry}</td>
-          <td class="col-misc">${sector}</td>
-          <td class="col-misc">${region}</td>
+          <td class="col-emp">${escapeHtml(employees)}</td>
+          <td class="col-year">${escapeHtml(founded)}</td>
+          <td class="col-rev">${escapeHtml(revenue)}</td>
+          <td class="col-misc">${escapeHtml(activity)}</td>
+          <td class="col-misc">${escapeHtml(subIndustry)}</td>
+          <td class="col-misc">${escapeHtml(industry)}</td>
+          <td class="col-misc">${escapeHtml(sector)}</td>
+          <td class="col-misc">${escapeHtml(region)}</td>
         `;
 
         fragment.appendChild(tr);
