@@ -453,7 +453,7 @@
 
   <script>
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1R8aekz9Tx803PiGKX9AjB_z8qUD19_JU/gviz/tq?tqx=out:json&sheet=Dataset&gid=1224566365';
-    const ROWS_PER_PAGE = 100;
+    const ROWS_PER_PAGE = 1000;
 
     // Custom Rank Mappings
     const EMPLOYEE_RANKS = {
@@ -701,7 +701,7 @@
         const safeLogo = escapeHtml(logo);
 
         const logoHtml = logo
-          ? `<span class="logo-cell"><img src="${safeLogo}" class="table-logo" alt="${safeName}" onerror="this.onerror=null; this.outerHTML='<span class=\\'logo-fallback\\'>${safeName.charAt(0) || 'C'}</span>'" /><span class="logo-tooltip"><img src="${safeLogo}" alt="${safeName} logo" /></span></span>`
+          ? `<span class="logo-cell"><img src="${safeLogo}" class="table-logo" alt="${safeName}" onerror="this.onerror=null; this.outerHTML='<span class=\'logo-fallback\'>${safeName.charAt(0) || 'C'}</span>'"><div class="logo-tooltip"><img src="${safeLogo}" alt="${safeName}" onerror="this.style.display='none'"></div></span>`
           : `<span class="logo-fallback">${safeName.charAt(0) || 'C'}</span>`;
 
         let websiteHtml = '<span style="color: var(--text-muted);">-</span>';
